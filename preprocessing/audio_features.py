@@ -52,8 +52,6 @@ def audio_features (params, img_audio, audio_path, append_name, node_list):
     # empty audio files
     invalid = []
     for node in node_list:
-        print('processing file:' + str(count))
-        count+=1
         # create a group for the desired feature type (e.g. a group called 'fbanks')
         audio_node = output_file.create_group(node, params[4])
         # get the base name of the node this feature will be appended to
@@ -62,6 +60,8 @@ def audio_features (params, img_audio, audio_path, append_name, node_list):
         caption_files = img_audio[base_name][1]
         
         for cap in caption_files:
+            print('processing file:' + str(count))
+            count+=1
             # basename for the caption file, i.e. cut of the file extension as dots arent
 	        # allowed in pytables group names. 
             base_capt = cap.split('.')[0]

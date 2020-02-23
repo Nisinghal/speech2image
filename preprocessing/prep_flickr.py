@@ -12,28 +12,33 @@ from visual_features import vis_feats
 from audio_features import audio_features
 from text_features import text_features_flickr
 import tables
+
 # path to the flickr audio, caption and image files 
-audio_path = os.path.join('/data/flickr/flickr_audio/wavs')
-img_path = os.path.join('/data/flickr/Flickr8k_Dataset/Flicker8k_Dataset')
-text_path = os.path.join('/data/flickr/dataset.json')
-# save the resulting feature file here
-data_loc = os.path.join('/prep_data/flickr_features.h5')
+audio_path = os.path.join('/content/drive/My Drive/IIITD Stuff/MCA - Language Learning using Speech to Image Retrieval/data/raw/Flickr8k_Audio/')
+img_path = os.path.join('/content/drive/My Drive/IIITD Stuff/MCA - Language Learning using Speech to Image Retrieval/data/raw/Flickr8k_Dataset/')
+text_path = os.path.join('/content/drive/My Drive/IIITD Stuff/MCA - Language Learning using Speech to Image Retrieval/data/raw/Flickr8k_Text/')
+# save the resulting feature file here  
+data_loc   = os.path.join('/content/drive/My Drive/IIITD Stuff/MCA - Language Learning using Speech to Image Retrieval/data/processed/Flickr8k_Features.h5')
+
 # some bools in case only some new features needs to be added
 vis = True
 speech = True
 text = True
 
-def load_obj(loc):
-    with open(loc + '.pkl', 'rb') as f:
-        return pickle.load(f)
-
-# list the img and audio directories
-audio = os.listdir(audio_path)
-imgs = os.listdir(img_path)
-
-# strip the files to their basename and remove file extension
+imgs  = os.listdir(img_path)
+print(len(imgs))
 imgs_base = [x.split('.')[0] for x in imgs]
-audio_base = [x.split('.')[0] for x in audio]
+print(str(len(imgs_base)) + " images received.")
+
+audio_base = []
+for i in range(1, 5):
+    for j in range(1, 11):
+        audio = os.listdir(os.path.join(audio_path, str(i), str(j)))
+        print(len(audio))
+        temp = [x.split('.')[0] for x in audio]
+        print(str(len(temp)) + " audios found.")
+        audio_base += temp
+        print(str(len(audio_base)) + " audios received.")
 
 # create a dictionary with the common part in the images and audio filenames as 
 # keys pointing to the image and caption file names
@@ -44,7 +49,7 @@ for im in imgs_base:
     for cap in audio_base:
         # match the images with the appropriate captions
         if im in cap:
-           temp.append(cap + '.wav')
+            temp.append(cap + '.wav')
         # quit the loop early if all captions are found
         if len (temp) == 5:
             break
@@ -56,7 +61,7 @@ for im in imgs_base:
         # keep track of images without captions
         no_cap.append(im)
 
-# create h5 output file for preprocessed images and audio
+print("# create h5 output file for preprocessed images and audio")
 output_file = tables.open_file(data_loc, mode='a')
 
 # we need to append something to the flickr files names because pytable group names cannot start
@@ -71,14 +76,14 @@ for x in img_audio:
         output_file.create_group("/", append_name + x.split('.')[0])    
     except:
         continue
-#list all the nodes
+# list all the nodes
 node_list = output_file.root._f_list_nodes()
     
-# create the visual features for all images 
+# # create the visual features for all images
 if vis: 
     vis_feats(img_path, output_file, append_name, img_audio, node_list, 'resnet') 
 
-######### parameter settings for the audio preprocessing ###############
+# ######### parameter settings for the audio preprocessing ###############
 
 # option for which audio feature to create (options are mfcc, fbanks, freq_spectrum and raw)
 feat = 'mfcc'
@@ -109,13 +114,14 @@ params.append(use_energy)
 if speech:
     audio_features(params, img_audio, audio_path, append_name, node_list)
 
-# load all the captions
-text_dict = {}
-txt = json.load(open(text_path))['images']
-for x in txt:
-    text_dict[x['filename'].split('.')[0]] = x
-# add text features for all captions
-if text:
-    text_features_flickr(text_dict, output_file, append_name, node_list)
+# # load all the captions
+# text_dict = {}
+# txt = json.load(open(text_path))['images']
+# for x in txt:
+#     text_dict[x['filename'].split('.')[0]] = x
+# # add text features for all captions
+# if text:
+#     text_features_flickr(text_dict, output_file, append_name, node_list)
+
 # close the output files
 output_file.close()
